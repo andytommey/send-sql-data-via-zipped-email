@@ -1,0 +1,50 @@
+import pyodbc
+import csv
+import pyminizip
+import string
+import random
+import os
+
+conn = pyodbc.connect('Driver={SQL Server};'
+                      'Server=servername;'
+                      'Database=databasename;'
+                      'Trusted_Connection=yes;')
+
+# Get data from database
+
+cursor = conn.cursor()
+cursor.execute('SELECT top 10 COLUMN_NAME1, COLUMN_NAME2, COLUMN_NAME3, COLUMN_NAME4 FROM dbo.TABLE_NAME ORDER BY COLUMN_NAME1 DESC')
+
+# open new csv file and write data to it
+
+with open('output.csv', 'w') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow([i[0] for i in cursor.description])
+    writer.writerows(cursor.fetchall())
+
+
+# generate random string and open a txt file with it in
+
+def id_generator(chars=string.ascii_letters + string.digits):
+    return ''.join(random.choice(chars) for i in range(10))
+
+
+password = id_generator()
+
+with open('password.txt', 'w') as pass_file:
+    pass_file.write(password)
+
+# zip csv file and password protect it
+
+compression_level = 5
+pyminizip.compress("output.csv", "", "output.zip", password, compression_level)
+
+# remove redundant output csv
+
+if os.path.exists("output.csv"):
+    os.remove("output.csv")
+else:
+    print("output.csv file could not be found")
+
+
+# next steps - send zip file and pw as separate emails
